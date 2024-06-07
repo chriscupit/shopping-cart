@@ -145,7 +145,7 @@ const products = [
           >
             <Card.Body>
               $ {item.cost} from {item.country} <br/>
-              (Click Here to remove item)
+              (Click to remove item)
             </Card.Body>
           </Accordion.Collapse>
         </Card>
