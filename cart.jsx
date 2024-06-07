@@ -1,9 +1,8 @@
-// sumulate getting products from DataBase
 const products = [
-    { name: "Apples_:", country: "Italy", cost: 3, instock: 10 },
-    { name: "Oranges:", country: "Spain", cost: 4, instock: 3 },
-    { name: "Beans__:", country: "USA", cost: 2, instock: 5 },
-    { name: "Cabbage:", country: "USA", cost: 1, instock: 8 },
+    { name: "Apples", country: "Italy", cost: 3, instock: 10 },
+    { name: "Oranges", country: "Spain", cost: 2, instock: 3 },
+    { name: "Beans", country: "USA", cost: 1, instock: 5 },
+    { name: "Cabbage", country: "USA", cost: 2, instock: 8 },
   ];
   //=========Cart=============
   const Cart = (props) => {
@@ -33,7 +32,7 @@ const products = [
           const result = await axios(url);
           console.log("FETCH FROM URl");
           if (!didCancel) {
-            dispatch({ type: "FETCH_SUCCESS", payload: result.data });
+            dispatch({ type: "FETCH_SUCCESS", payload: result.data.data });
           }
         } catch (error) {
           if (!didCancel) {
@@ -90,7 +89,7 @@ const products = [
     } = ReactBootstrap;
     //  Fetch Data
     const { Fragment, useState, useEffect, useReducer } = React;
-    const [query, setQuery] = useState("http://localhost:1337/api/products");
+    const [query, setQuery] = useState("api/products");
     const [{ data, isLoading, isError }, doFetch] = useDataApi(
       "http://localhost:1337/api/products",
       {
@@ -99,40 +98,34 @@ const products = [
     );
     console.log(`Rendering Products ${JSON.stringify(data)}`);
     // Fetch Data
+    //moving things into the cart and also deliminating from the product object
     const addToCart = (e) => {
-      let name = e.target.name;
-      let item = items.filter((item) => item.name == name);
-      if (item[0].instock == 0) return;
-      item[0].instock = item[0].instock - 1;
-      console.log(`add to Cart ${JSON.stringify(item)}`);
-      setCart([...cart, ...item]);
-      //doFetch(query);
-    };
-
-
-    const deleteCartItem = (delIndex) => {
-        let newCart = cart.filter((item, i) => delIndex != i);
-        let target = cart.filter((item, index) => delIndex == index);
-        let newItems = items.map((item, index) => {
-          if (item.name == target[0].name) item.instock = item.instock + 1;
-          return item;
-        });
-        setItems(newItems);
+    let name = e.target.name;
+    let item = items.filter((item) => item.name == name);
+    if (item[0].instock == 0) return;
+    item[0].instock = item[0].instock - 1;
+    console.log(`add to Cart ${JSON.stringify(item)}`);
+    setCart([...cart, ...item]);
+  };
+    //if a user clicks on an item in the cart list twice (once to open accordian second to delete it) we delete it form the list and add the to the inventory object
+    const deleteCartItem = (deleteIndex) => {
+      let newCart = cart.filter((item, i) => deleteIndex != i);
+      let target = cart.filter((item, index) => deleteIndex == index);
+      let newItems = items.map((item, index) => {
+        if (item.name == target[0].name) item.instock++;
+        return item;
+      });
       setCart(newCart);
+      setItems(newItems);
     };
-
-
     const photos = ["apple.png", "orange.png", "beans.png", "cabbage.png"];
   
     let list = items.map((item, index) => {
-      //let n = index + 1049;
-      //let url = "https://picsum.photos/id/" + n + "/50/50";
-  
       return (
         <li key={index}>
           <Image src={photos[index % 4]} width={70} roundedCircle></Image>
           <Button variant="primary" size="large">
-          {item.name}:${item.cost}-Stock={item.instock}
+            {item.name} Cost: {item.cost} Stock: {item.instock}
           </Button>
           <input name={item.name} type="submit" onClick={addToCart}></input>
         </li>
@@ -151,7 +144,8 @@ const products = [
             eventKey={1 + index}
           >
             <Card.Body>
-              $ {item.cost} from {item.country}
+              $ {item.cost} from {item.country} <br/>
+              (Click Here to remove item)
             </Card.Body>
           </Accordion.Collapse>
         </Card>
@@ -177,14 +171,32 @@ const products = [
       console.log(`total updated to ${newTotal}`);
       return newTotal;
     };
+    // TODO: implement the restockProducts function
     const restockProducts = (url) => {
       doFetch(url);
       let newItems = data.map((item) => {
-        let { name, country, cost, instock } = item;
-        return { name, country, cost, instock };
+        let { name, country, cost, instock } = item.attributes;
+        return {name, country, cost, instock };
       });
-      setItems([...items, ...newItems]);
+      let stock = items;
+      for (let i=0; i<newItems.length; i++) {
+        let failureCount = 0;
+        for (let j=0; j<stock.length; j++) {
+          if (stock[j].name == newItems[i].name) {
+            let newStockNumber = stock[j].instock + newItems[i].instock;
+            stock[j].instock = newStockNumber;
+          }else{failureCount++};
+          if (failureCount == stock.length){
+            stock.push(newItems[i]);
+          }
+        };
+      };
+      setItems(stock);
+      let theCart = cart;
+      setCart(theCart);
     };
+      
+  
   
     return (
       <Container>
@@ -206,7 +218,7 @@ const products = [
         <Row>
           <form
             onSubmit={(event) => {
-              restockProducts(`http://localhost:1337/${query}`);
+              restockProducts(query);
               console.log(`Restock called on ${query}`);
               event.preventDefault();
             }}
@@ -223,5 +235,5 @@ const products = [
     );
   };
   // ========================================
-  ReactDOM.render(<Products />, document.getElementById("root"));
+  ReactDOM.render(<Products />, document.getElementById("root"))
   
