@@ -1,3 +1,4 @@
+// simulate getting products from DataBase
 const products = [
     { name: "Apples", country: "Italy", cost: 3, instock: 10 },
     { name: "Oranges", country: "Spain", cost: 2, instock: 3 },
@@ -98,7 +99,7 @@ const products = [
     );
     console.log(`Rendering Products ${JSON.stringify(data)}`);
     // Fetch Data
-    //moving things into the cart and also deliminating from the product object
+    //Add product to the cart
     const addToCart = (e) => {
     let name = e.target.name;
     let item = items.filter((item) => item.name == name);
@@ -107,7 +108,7 @@ const products = [
     console.log(`add to Cart ${JSON.stringify(item)}`);
     setCart([...cart, ...item]);
   };
-    //if a user clicks on an item in the cart list twice (once to open accordian second to delete it) we delete it form the list and add the to the inventory object
+    //click twice to delete item from cart and add back to stock
     const deleteCartItem = (deleteIndex) => {
       let newCart = cart.filter((item, i) => deleteIndex != i);
       let target = cart.filter((item, index) => deleteIndex == index);
@@ -121,11 +122,12 @@ const products = [
     const photos = ["apple.png", "orange.png", "beans.png", "cabbage.png"];
   
     let list = items.map((item, index) => {
+        let n = index + 1049;
       return (
         <li key={index}>
           <Image src={photos[index % 4]} width={70} roundedCircle></Image>
           <Button variant="primary" size="large">
-            {item.name} Cost: {item.cost} Stock: {item.instock}
+          {item.name}:${item.cost}-Stock={item.instock}
           </Button>
           <input name={item.name} type="submit" onClick={addToCart}></input>
         </li>
@@ -178,25 +180,27 @@ const products = [
         let { name, country, cost, instock } = item.attributes;
         return {name, country, cost, instock };
       });
-      let stock = items;
+
+   
+       let stock = items;
       for (let i=0; i<newItems.length; i++) {
-        let failureCount = 0;
+        let fail = 0;
         for (let j=0; j<stock.length; j++) {
           if (stock[j].name == newItems[i].name) {
             let newStockNumber = stock[j].instock + newItems[i].instock;
             stock[j].instock = newStockNumber;
-          }else{failureCount++};
-          if (failureCount == stock.length){
+          }else{fail++};
+          if (fail == stock.length){
             stock.push(newItems[i]);
           }
         };
       };
-      setItems(stock);
       let theCart = cart;
-      setCart(theCart);
-    };
       
-  
+      setItems(stock);
+      
+      setCart(theCart);
+    }; 
   
     return (
       <Container>
@@ -219,6 +223,7 @@ const products = [
           <form
             onSubmit={(event) => {
               restockProducts(query);
+              //restockProducts(`http://localhost:1337/${query}`);
               console.log(`Restock called on ${query}`);
               event.preventDefault();
             }}
@@ -236,4 +241,3 @@ const products = [
   };
   // ========================================
   ReactDOM.render(<Products />, document.getElementById("root"))
-  
